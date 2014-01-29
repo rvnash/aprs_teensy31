@@ -1,8 +1,6 @@
 /*
  * Copyright (C) 2014 by KC3ARY Rich Nash
  * 
- * Module modified code from EA5HAV.
- *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2

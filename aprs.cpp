@@ -1,14 +1,5 @@
 /*
- * Copyright (C) 2013 by KC3ARY Rich Nash
- * 
- * Module modified after being inheritted from EA5HAV. The same license described below
- * is in effect.
- *
- * The below copyright is kept intact.
- *
- */
-
-/* Credit to the trackuino project written by EA5HAV Javi
+ * Copyright (C) 2014 by KC3ARY Rich Nash
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -32,6 +23,7 @@
 
 #define MAXSENDBUFFER 250 // Used to allocate a static buffer on the stack to build the AX25 buffer
 
+// @TODO: latToStr and lonToStr should probably be the same function
 // Convert latitude from a float to a string
 void latToStr(char *const s, const int size, float lat)
 {
@@ -66,7 +58,8 @@ void lonToStr( char *const s, const int size, float lon)
 
 
 // Dump out the AX25 packet in a semi-readable way
-// Note, the end of header and CRC are sent as ASCII characters, which they aren't
+// Note, the end of header and CRC are sent as ASCII characters, which they aren't, this
+// may screw up some terminals
 void logBuffer(const uint8_t *const buf, const int bitsSent, const uint8_t dayOfMonth, const uint8_t hour, const uint8_t min)
 {
   Serial.printf("BUFFER size %d: ", bitsSent);
@@ -135,6 +128,7 @@ void logBuffer(const uint8_t *const buf, const int bitsSent, const uint8_t dayOf
   Serial.println();
 }
 
+// Just pass the parameters along to afsk
 void aprs_setup(const uint16_t p_txDelay,
                 const uint8_t p_pttPin,
                 const uint16_t p_pttDelay,
@@ -161,6 +155,7 @@ void aprs_send(const PathAddress *const paths, const int nPaths,
                const char symbol,
                const char *const comment)
 {
+  // Create the packet using the ax25 library.
     uint8_t buf[MAXSENDBUFFER];
     char temp[12];
 
@@ -208,5 +203,6 @@ void aprs_send(const PathAddress *const paths, const int nPaths,
     afsk_start();
     while (afsk_busy()) ;
 
+    // Print out what was sent
     logBuffer(buf, ax25_getPacketSize(), dayOfMonth, hour, min );
 }

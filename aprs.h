@@ -24,11 +24,11 @@ struct PathAddress {
 	uint8_t ssid;
 };
 
-void aprs_setup(uint16_t txDelay, // ms to transmit ax25 flag
-                uint8_t pttPin, // Use PTT pin, 0 = do not use PTT
-                uint16_t pttDelay, // ms to wait after PTT to transmit
-                uint32_t p_toneLength, // if <> 0 then emit a sub-audio tone (300hz) before packet to trigger VOX
-		uint32_t p_silenceLength // Length of time (ms) after tone before packet
+void aprs_setup(const uint16_t txDelay, // ms to transmit ax25 flag
+                const uint8_t pttPin, // Use PTT pin, 0 = do not use PTT
+                const uint16_t pttDelay, // ms to wait after PTT to transmit
+                const uint32_t p_toneLength, // if <> 0 then emit a sub-audio tone (300hz) before packet to trigger VOX
+		const uint32_t p_silenceLength // Length of time (ms) after tone before packet
                 );
 
 void aprs_send(const PathAddress *const paths, const int nPaths,

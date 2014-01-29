@@ -1,8 +1,6 @@
 /*
  * Copyright (C) 2014 by KC3ARY Rich Nash
  * 
- * Module modified code from EA5HAV.
- *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -28,7 +26,11 @@
 
 #define SAMPLES_PER_CYCLE 512 // How many samples in our sin-wave table
 
-#define INTERRUPT_RATE 8  // in Microseconds
+// INTERRUPT_RATE sets the rate at which the analog output pin is adjusted
+// to generate the sound waves for the audio frequency-shif keying. I've run
+// this as low as 8 microseconds and the Teensy 3.1 seems to do just fine.
+#define INTERRUPT_RATE 16  // in Microseconds
+
 #define PLAYBACK_RATE (1000000.0f / INTERRUPT_RATE)     // In Hertz
 
 // 1200 Baud settings
@@ -37,14 +39,17 @@
 #define SPACE_FREQUENCY 2200.0f
 #define TONE_FREQUENCY 300.0f
 
-// How many samples to send from the sin table for each bit
-// This is a potential source of output timing drift, as this isn't very precise
-// at low INTERRUPT_RATEs
+// How many samples to send from the sin table for each bit. This is a
+// integer, which makes it a potential source of output timing drift, 
+// as this isn't very precise at large INTERRUPT_RATEs
 // At 16 microseconds it is off by 0.1%
+// @TODO: Perhaps the same fixed point trick that is used in the stride calculation
+// could be used here too, which would make it more accurate.
 #define SAMPLES_PER_BIT (uint16_t)(PLAYBACK_RATE / BAUD_RATE + 0.5f)
 
 // Fixed point arithmentic on the stride length through the sin wave table
 // Note, the bottom "FIXED_PNT_BITS" bits of the counter are the fractional part
+// This is done to give more accuracy to the tones' frequency
 #define FIXED_PNT_BITS 6
 #define FIXED_PNT_SCALE (1 << FIXED_PNT_BITS)
 
@@ -67,6 +72,7 @@
 #define SIN_TABLE_MARK afsk_sine_table2
 #define SIN_TABLE_SPACE afsk_sine_table1
 
+// Keep the sin wave data in a different file as to not take up space
 #include "progmemSin.h"
 
 
@@ -79,15 +85,14 @@ static uint32_t sine_table_switcher; // The bit mask to switch sin tables quick
 static uint16_t currentSampleCount;    // 1 bit = SAMPLES_PER_BAUD samples
 static uint16_t currentStride;    // 1200/2200 for standard AX.25
 static uint16_t currentSample;           // Fixed point 
-static uint32_t totalSamplesSent;
-static uint8_t current_byte = 0;
+static uint32_t totalSamplesSent; // Book keeping
+static uint8_t current_byte = 0;   // The current outgoing byte
 
 
 // Buffer of bytes to send
-static const uint8_t *afsk_packet;
+static const uint8_t *afsk_packet;  // The buffer of bytes we are sending
 static uint32_t afsk_packet_size = 0; // How many bytes in the packet
 static uint32_t packet_pos;       // Next bit to be sent out 
-
 
 static bool fDoTone;
 static uint32_t toneStop, silenceStop;
@@ -98,7 +103,7 @@ static uint16_t pttDelay;
 static uint32_t toneLength;
 static uint32_t silenceLength;
 
-IntervalTimer timer;
+IntervalTimer timer; // The timer used for tone generation.
 
 
 // Returns an entry from the sin table
@@ -119,17 +124,19 @@ inline uint16_t afsk_read_sample(const uint16_t *const sine_table, const uint16_
 
 inline void afsk_output_sample( uint16_t b)
 {
-  analogWrite(A14, b);
+  analogWrite(A14, b); // I love the teensy 3.1. This is soooo much harder on the Arduino!
 }
 
 void afsk_timer_stop()
 {
   timer.end();
-  Serial.printf("Ending timer, samples sent = %d\n\r", totalSamplesSent);
-  afsk_output_sample(2047); // 50%
+  afsk_output_sample(2047); // 50% audio out
 }
 
-// Should be called to put out the next sample
+// Called at INTERRUPT_RATE to put out the next sample
+// This is called from within an interrupt service
+// This should be as tight as possible
+// It's grown bloated a bit since I added the VOX opening pre-tone code
 void interrupt(void)
 {
   if (fDoTone) {
@@ -151,7 +158,6 @@ void interrupt(void)
     }
   } else {
     // Send the packet one bit at a time
-
     // If done sending packet
     if (packet_pos == afsk_packet_size) {
       afsk_timer_stop();  // Disable timer
@@ -169,6 +175,7 @@ void interrupt(void)
 	current_byte = current_byte / 2;  // ">>1" forces int conversion
       if ((current_byte & 1) == 0) {
 	// Toggle tone (1200 <> 2200)
+	// Use XOR's to quickly toggle these values without if statements
 	currentStride ^= (SAMPLE_STRIDE_MARK_FIXED_PNT ^ SAMPLE_STRIDE_SPACE_FIXED_PNT);
 	afsk_sine_table = (uint16_t *)((uint32_t)afsk_sine_table ^ sine_table_switcher);
       }
@@ -181,13 +188,12 @@ void interrupt(void)
   }
   currentSample += currentStride;
   uint16_t s = afsk_read_sample(afsk_sine_table, (uint16_t)((currentSample >> FIXED_PNT_BITS) & (SAMPLES_PER_CYCLE-1)));
-  totalSamplesSent += 1;
+  totalSamplesSent++;
   afsk_output_sample(s);
 }
 
 void afsk_timer_start()
 {
-  Serial.println("Starting timer");
   timer.begin( interrupt, INTERRUPT_RATE );
 }
 
@@ -218,8 +224,6 @@ void afsk_set_buffer(const uint8_t *const buffer, const uint16_t len)
 {
     afsk_packet_size = len; // Length in bits
     afsk_packet = buffer;
-    Serial.printf("Setup buffer with %d bits\n\r", len );
-    Serial.printf("Should be about %d samples sent\n\r", len * SAMPLES_PER_BIT );
 }
 
 int afsk_busy()
