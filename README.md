@@ -13,4 +13,4 @@ Notes
 
 Acknowledgement
 ---------------
-This code is based on code retrieved from the Trackuino project on the web at href="http://www.trackuino.org">here</a>. This is a hardware/software project designed to use the Arduino and a Radiometrix HX1 transmitter as a position tracking system. The code was written by Javier Martin under the same GNU General Public License I am using for this project.
+This code is based on code retrieved from the Trackuino project on the web <a href="http://www.trackuino.org">here</a>. This is a hardware/software project designed to use the Arduino and a Radiometrix HX1 transmitter as a position tracking system. The code was written by Javier Martin under the same GNU General Public License I am using for this project.
