@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2014 by KC3ARY Rich Nash
  * 
+ * Module modified code from EA5HAV.
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -22,12 +24,12 @@
 #include <stdint.h>
 
 // Exported functions
-void afsk_setup(const uint16_t p_txDelay, // ms to transmit ax25 flag
-                const uint8_t p_pttPin, // Use PTT pin, 0 = do not use PTT
-                const uint16_t p_pttDelay, // ms to wait after PTT to transmit
-                const uint32_t p_toneLength, const uint32_t p_silenceLength);
+void
+afsk_setup(const uint8_t pttPin, // Use PTT pin, 0 = do not use PTT
+    const uint16_t pttDelay, // ms to wait after PTT to transmit
+    const uint32_t toneLength, const uint32_t p_silenceLength);
 
-void afsk_set_buffer(const uint8_t  * const buffer, const uint16_t len);
+void afsk_set_buffer(const uint8_t * const buffer, const uint16_t len);
 void afsk_start();
 int afsk_busy();
 uint16_t afsk_getTxDelay();
