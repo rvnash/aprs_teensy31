@@ -58,7 +58,7 @@ void setup()
   gps.setSentencesToReceive(OUTPUT_RMC_GGA);
 
   // Set up the APRS module
-  aprs_setup(200, // ms to transmit ax25 flag
+  aprs_setup(50, // number of preamble flags to send
 	     PTT_PIN, // Use PTT pin
 	     100, // ms to wait after PTT to transmit
 	     0, 0 // No VOX ton
